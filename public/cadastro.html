@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <nav class="menu">
+        <a class="link" href="index.html">Home</a>
+        <a class="link" href="chat.html">Chat</a>
+        <a class="link" id="linkLogin" href="login.html">Login</a>
+        <a class="link" id="linkCadastro" href="cadastro.html">Cadastro</a>
+        <button type="button" id="btnLogout" class="link" hidden>Log-out</button>
+    </nav>
+    
+    <main class="conteiner-cadastro">
+        <div class="conteiner-ch1">
+            <h2>Novo Registro</h2>
+        </div>
+
+        <div class="caixa-form">
+            <div class="campo">
+                <label for="cadUsuario">Nome de Operador</label>
+                <input type="text" id="cadUsuario" placeholder="Escolha um nome" required>
+            </div>
+
+            <div class="campo">
+                <label for="cadEmail">E-mail</label>
+                <input type="email" id="cadEmail" placeholder="Digite seu e-mail" required>
+            </div>
+
+            <div class="campo">
+                <label for="cadSenha">Senha Segura</label>
+                <input type="password" id="cadSenha" placeholder="Mínimo 6 caracteres" required>
+            </div>
+
+            <button id="btnCadastro" class="btn-form">Cadastrar</button>
+            <div id="cadMensagem" class="mensagem-box"></div>
+        </div>
+    </main>
+
+    <div id="modalPosCadastro" class="auth-overlay" hidden>
+        <div class="auth-modal">
+            <div class="auth-modal-icon">✓</div>
+            <h2 class="auth-modal-titulo">Registro Concluído</h2>
+            <p class="auth-modal-texto">
+                Seus dados foram inseridos no banco de dados da Batcaverna.<br>
+                Faça login para autenticar sua conexão.
+            </p>
+            <div class="auth-modal-botoes">
+                <a href="login.html" class="auth-btn auth-btn-primario">Ir para Login</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Site de Rafael Stati. Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        const usuarioLogado = localStorage.getItem('usuarioLogado');
+        const linkCadastro = document.querySelector('#linkCadastro');
+        const linkLogin = document.querySelector('#linkLogin');
+        const btnLogout = document.querySelector('#btnLogout');
+
+        if (usuarioLogado) {
+            linkCadastro.hidden = true;
+            linkLogin.hidden = true;
+            btnLogout.hidden = false;
+        }
+
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('emailLogado');
+            window.location.reload();
+        });
+
+        const btnCadastro = document.querySelector('#btnCadastro');
+        const cadMensagem = document.querySelector('#cadMensagem');
+        const modalPosCadastro = document.querySelector('#modalPosCadastro');
+
+        btnCadastro.addEventListener('click', async ()=>{
+            const usuarioEntrada = document.querySelector('#cadUsuario');
+            const emailEntrada = document.querySelector('#cadEmail');
+            const senhaEntrada = document.querySelector('#cadSenha');
+
+            const usuario = usuarioEntrada.value.trim();
+            const email = emailEntrada.value.trim();
+            const senha = senhaEntrada.value;
+
+            if (!usuario || !email || !senha) {
+                cadMensagem.innerText = 'Preencha todos os campos antes de enviar!';
+                cadMensagem.style.color = '#ff6b6b';
+                cadMensagem.style.borderColor = '#ff6b6b';
+                cadMensagem.style.display = 'block';
+                return;
+            }
+
+            cadMensagem.innerText = 'Criptografando dados... aguarde...';
+            cadMensagem.style.color = '#ffa500';
+            cadMensagem.style.borderColor = '#ffa500';
+            cadMensagem.style.display = 'block';
+            btnCadastro.disabled = true;
+
+            try{
+                const respostaBE = await fetch('/cadastro', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ usuario, email, senha })
+                });
+
+                const dados = await respostaBE.json();
+
+                if(!respostaBE.ok) {
+                    cadMensagem.innerText = dados.erro;
+                    cadMensagem.style.color = '#ff6b6b';
+                    cadMensagem.style.borderColor = '#ff6b6b';
+                    btnCadastro.disabled = false;
+                    return;
+                }
+
+                cadMensagem.innerText = `${dados.mensagem}`;
+                cadMensagem.style.color = '#4cd964';
+                cadMensagem.style.borderColor = '#4cd964';
+
+                usuarioEntrada.value = '';
+                emailEntrada.value = '';
+                senhaEntrada.value = '';
+
+                setTimeout(() => {
+                    modalPosCadastro.hidden = false;
+                }, 800);
+            }
+            catch(erro) {
+                console.error('Erro:', erro);
+                cadMensagem.innerText = 'Falha nos servidores da Wayne Enterprises!';
+                cadMensagem.style.color = '#ff6b6b';
+                cadMensagem.style.borderColor = '#ff6b6b';
+            } finally {
+                btnCadastro.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

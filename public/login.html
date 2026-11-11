@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <nav class="menu">
+        <a class="link" href="index.html">Home</a>
+        <a class="link" href="chat.html">Chat</a>
+        <a class="link" id="linkLogin" href="login.html">Login</a>
+        <a class="link" id="linkCadastro" href="cadastro.html">Cadastro</a>
+        <button type="button" id="btnLogout" class="link" hidden>Log-out</button>
+    </nav>
+    
+    <main class="conteiner-cadastro">
+        <div class="conteiner-ch1">
+            <h2>Acessar Sistema</h2>
+        </div>
+
+        <div class="caixa-form">
+            <div class="campo">
+                <label for="loginEmail">E-mail</label>
+                <input type="email" id="loginEmail" placeholder="Digite seu e-mail" required>
+            </div>
+
+            <div class="campo">
+                <label for="loginSenha">Senha</label>
+                <input type="password" id="loginSenha" placeholder="Digite sua senha" required>
+            </div>
+
+            <button id="btnlogin" class="btn-form">Entrar</button>
+            <div id="loginMensagem" class="mensagem-box"></div>
+        </div>
+    </main>
+
+    <div id="modalPosLogin" class="auth-overlay" hidden>
+        <div class="auth-modal">
+            <div class="auth-modal-icon">🦇</div>
+            <h2 class="auth-modal-titulo">Acesso Autorizado</h2>
+            <p class="auth-modal-texto" id="textoPosLogin">
+                Bem-vindo de volta.<br>
+                A conexão com a Batcaverna foi estabelecida.
+            </p>
+            <div class="auth-modal-botoes">
+                <button id="btnIrParaChat" class="auth-btn auth-btn-primario">Acessar Comunicação</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Site de Rafael Stati. Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        const usuarioLogado = localStorage.getItem('usuarioLogado');
+        const linkCadastro = document.querySelector('#linkCadastro');
+        const linkLogin = document.querySelector('#linkLogin');
+        const btnLogout = document.querySelector('#btnLogout');
+
+        if (usuarioLogado) {
+            linkCadastro.hidden = true;
+            linkLogin.hidden = true;
+            btnLogout.hidden = false;
+        }
+
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('emailLogado');
+            window.location.reload();
+        });
+
+        const btnlogin = document.querySelector('#btnlogin');
+        const loginMensagem = document.querySelector('#loginMensagem');
+        const modalPosLogin = document.querySelector('#modalPosLogin');
+        const textoPosLogin = document.querySelector('#textoPosLogin');
+
+        btnlogin.addEventListener('click', async ()=>{
+            const emailEntrada = document.querySelector('#loginEmail');
+            const senhaEntrada = document.querySelector('#loginSenha');
+
+            const email = emailEntrada.value.trim();
+            const senha = senhaEntrada.value;
+
+            if ( !email || !senha) {
+                loginMensagem.innerText = 'Preencha todos os campos antes de enviar!';
+                loginMensagem.style.color = '#ff6b6b';
+                loginMensagem.style.borderColor = '#ff6b6b';
+                loginMensagem.style.display = 'block';
+                return;
+            }
+
+            loginMensagem.innerText = 'Validando credenciais...';
+            loginMensagem.style.color = '#ffa500';
+            loginMensagem.style.borderColor = '#ffa500';
+            loginMensagem.style.display = 'block';
+            btnlogin.disabled = true;
+
+            try{
+                const respostaBE = await fetch('/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const dados = await respostaBE.json();
+
+                if(!respostaBE.ok) {
+                    loginMensagem.innerText = dados.erro;
+                    loginMensagem.style.color = '#ff6b6b';
+                    loginMensagem.style.borderColor = '#ff6b6b';
+                    btnlogin.disabled = false;
+                    return;
+                }
+
+                const nomeUser = dados.usuario || email.split('@')[0];
+                localStorage.setItem('usuarioLogado', nomeUser);
+                localStorage.setItem('emailLogado', dados.email || email);
+
+                loginMensagem.innerText = `${dados.mensagem}`;
+                loginMensagem.style.color = '#4cd964';
+                loginMensagem.style.borderColor = '#4cd964';
+                
+                emailEntrada.value = '';
+                senhaEntrada.value = '';
+
+                textoPosLogin.innerHTML = `Bem-vindo, <strong>${nomeUser}</strong>.<br>A conexão segura está pronta.`;
+
+                setTimeout(() => {
+                    modalPosLogin.hidden = false;
+                }, 600);
+            }
+            catch(erro) {
+                console.error('Erro:', erro);
+                loginMensagem.innerText = 'Erro ao conectar com o servidor!';
+                loginMensagem.style.color = '#ff6b6b';
+                loginMensagem.style.borderColor = '#ff6b6b';
+            } finally {
+                btnlogin.disabled = false;
+            }
+        });
+
+        document.querySelector('#btnIrParaChat').addEventListener('click', () => {
+            window.location.href = 'chat.html';
+        });
+    </script>
+</body>
+</html>
